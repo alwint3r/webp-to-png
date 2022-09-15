@@ -4,22 +4,29 @@
 #include <string.h>
 #include <webp/decode.h>
 
-int main()
+int main(int argc, char **argv)
 {
+    if (argc < 3)
+    {
+        fprintf(stderr, "Usage: webp2png <input> <output>\r\n\r\n");
+        return EXIT_FAILURE;
+    }
+
+    const char *input_file = (const char *)argv[1];
+    const char *output_file = (const char *)argv[2];
+
     int ret_val = EXIT_SUCCESS;
 
-    FILE *in = fopen("reona_unknown.webp", "rb");
+    FILE *in = fopen(input_file, "rb");
     if (!in)
     {
         fprintf(stderr, "Failed to open input file!\r\n");
-        abort();
+        return EXIT_FAILURE;
     }
 
     fseek(in, 0, SEEK_END);
     long file_size = ftell(in);
     fseek(in, 0, SEEK_SET);
-
-    printf("File size: %ld\r\n", file_size);
 
     char *input_buffer = (char *)malloc((size_t)file_size);
     if (!input_buffer)
@@ -29,11 +36,16 @@ int main()
     }
 
     size_t read_result = fread(input_buffer, file_size, 1, in);
-    printf("Read result: %lu\r\n", read_result);
+    if (read_result < 0)
+    {
+        fprintf(stderr, "Failed to read file!");
+        ret_val = EXIT_FAILURE;
+        goto finish;
+    }
 
     int width = 0;
     int height = 0;
-    if (!WebPGetInfo((const uint8_t*)input_buffer, file_size, &width, &height))
+    if (!WebPGetInfo((const uint8_t *)input_buffer, file_size, &width, &height))
     {
         fprintf(stderr, "Failed to get WebP info!\r\n");
 
@@ -41,15 +53,13 @@ int main()
         goto finish;
     }
 
-    printf("Image width: %d, height: %d\r\n", width, height);
-
-    uint8_t* output_buffer = WebPDecodeRGBA((const uint8_t*)input_buffer, file_size, &width, &height);
+    uint8_t *output_buffer = WebPDecodeRGBA((const uint8_t *)input_buffer, file_size, &width, &height);
     if (!output_buffer)
     {
         fprintf(stderr, "Failed to decode WebP!\r\n");
-        
+
         ret_val = EXIT_FAILURE;
-        goto finish;
+        goto webp_finish;
     }
 
     png_image w_image;
@@ -60,8 +70,7 @@ int main()
     w_image.height = height;
     w_image.format = PNG_FORMAT_RGBA;
 
-
-    int write_result = png_image_write_to_file(&w_image, "reona_unknown_w.png", 0, output_buffer, 2000, NULL);
+    int write_result = png_image_write_to_file(&w_image, output_file, 0, output_buffer, 2000, NULL);
     if (!write_result)
     {
         fprintf(stderr, "Failed to write PNG image!\r\n");
@@ -69,6 +78,8 @@ int main()
     }
 
     png_image_free(&w_image);
+
+webp_finish:
     WebPFree(output_buffer);
 
 finish:

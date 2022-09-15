@@ -5,3 +5,4 @@ all
 *.log
 *.webp
 .DS_Store
+webp2png

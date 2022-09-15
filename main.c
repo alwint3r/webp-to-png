@@ -70,7 +70,7 @@ int main(int argc, char **argv)
     w_image.height = height;
     w_image.format = PNG_FORMAT_RGBA;
 
-    int write_result = png_image_write_to_file(&w_image, output_file, 0, output_buffer, 2000, NULL);
+    int write_result = png_image_write_to_file(&w_image, output_file, 0, output_buffer, width * 4, NULL);
     if (!write_result)
     {
         fprintf(stderr, "Failed to write PNG image!\r\n");
